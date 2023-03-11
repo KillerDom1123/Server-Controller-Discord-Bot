@@ -1,0 +1,38 @@
+{
+  "name": "server-controller-discord-bot",
+  "version": "1.0.0",
+  "description": "Control turning a physical server on/off using a Discord bot",
+  "scripts": {
+    "start": "nodemon src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KillerDom1123/Server-Controller-Discord-Bot.git"
+  },
+  "author": "KillerDom1123",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/KillerDom1123/Server-Controller-Discord-Bot/issues"
+  },
+  "homepage": "https://github.com/KillerDom1123/Server-Controller-Discord-Bot#readme",
+  "devDependencies": {
+    "@types/node": "^18.15.0",
+    "@types/ping": "^0.4.1",
+    "@types/wake_on_lan": "^0.0.30",
+    "@typescript-eslint/eslint-plugin": "^5.54.1",
+    "eslint": "^8.35.0",
+    "eslint-config-prettier": "^8.7.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "nodemon": "^2.0.21",
+    "prettier": "^2.8.4",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "discord.js": "^14.7.1",
+    "dotenv": "^16.0.3",
+    "node": "^19.6.1",
+    "ping": "^0.4.4",
+    "wake_on_lan": "^1.0.0"
+  }
+}
