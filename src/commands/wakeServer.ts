@@ -1,9 +1,10 @@
 import { ApplicationCommandType, Client, CommandInteraction } from 'discord.js';
 import { Command } from '../types';
-import wol from 'wake_on_lan';
+import axios from 'axios';
+import IloClient from '../iloClient';
 
-const serverMac = process.env.SERVER_MAC || '';
-const serverAddress = process.env.SERVER_ADDRESS || '';
+const iloUsername = process.env.ILO_USERNAME || '';
+const iloPassword = process.env.ILO_PASSWORD || '';
 
 export const wakeServerCommand: Command = {
     name: 'wake',
@@ -12,9 +13,20 @@ export const wakeServerCommand: Command = {
     run: async (client: Client, interaction: CommandInteraction) => {
         console.log('Waking server...');
 
-        console.log(serverMac);
-        const resp = await wol.wake(serverMac);
-        console.log(resp);
+        try {
+            const iloClient = new IloClient();
+            await iloClient.signIn(iloUsername, iloPassword);
+            await iloClient.powerOn(1);
+            await iloClient.logout();
+        } catch (err) {
+            if (err instanceof axios.AxiosError) {
+                console.log(err.message);
+                await interaction.followUp({
+                    content: err.message,
+                });
+                return;
+            }
+        }
 
         await interaction.followUp({
             content: 'Turning the server on...',
