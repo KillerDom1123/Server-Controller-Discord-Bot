@@ -19,7 +19,6 @@ export default (client: ClientWithServerStatus) => {
             ],
             status: 'online',
         });
-        client;
 
         setTimedEvents(client);
 

@@ -6,4 +6,6 @@ export interface Command extends ChatInputApplicationCommandData {
 
 export interface ClientWithServerStatus extends Client {
     serverStatus?: string;
+    playerCount?: number;
+    turnOffTime?: Date;
 }
