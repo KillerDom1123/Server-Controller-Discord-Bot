@@ -54,7 +54,7 @@ class IloClient {
         if (!this.isLoggedIn || !this.sessionLocation) throw new Error('Client not logged in!');
 
         try {
-            await axiosClient.delete(this.sessionLocation);
+            await axiosClient.delete(this.sessionLocation, axiosConfig);
         } catch (err) {
             if (isAxiosError(err)) {
                 console.error(err.message, err.response?.data);
@@ -97,7 +97,7 @@ class IloClient {
                 `${baseIloUrl}/systems/${systemId}/`,
                 {
                     Action: 'Reset',
-                    ResetType: 'PressPowerButton',
+                    ResetType: 'PushPowerButton',
                 },
                 axiosConfig,
             );

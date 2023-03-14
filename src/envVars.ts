@@ -1,0 +1,12 @@
+export const rconPassword = process.env.RCON_PASSWORD || '';
+export const sshUsername = process.env.SSH_USERNAME || '';
+export const sshPassword = process.env.SSH_PASSWORD || '';
+export const serverAddress = process.env.SERVER_ADDRESS || '';
+export const controlGuild = process.env.GUILD_ID || '';
+export const controlChannel = process.env.CHANNEL_ID || '';
+export const shutdownIn = (process.env.SHUTDOWN_TIME as unknown as number) || 0; // In seconds
+export const iloUsername = process.env.ILO_USERNAME || '';
+export const iloPassword = process.env.ILO_PASSWORD || '';
+export const discordToken = process.env.DISCORD_TOKEN || '';
+export const botGraceIn = (process.env.BOOT_GRACE_PERIOD as unknown as number) || 0; // In seconds
+export const rconPort = (process.env.RCON_PORT as unknown as number) || 0; // In seconds

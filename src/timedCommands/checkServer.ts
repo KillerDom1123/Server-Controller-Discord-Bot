@@ -1,16 +1,22 @@
 import ping from 'ping';
 import { ClientWithServerStatus } from '../types';
-import { SERVER_OFFLINE, SERVER_ONLINE, SERVER_TURNING_OFF } from '../constants';
+import { PENDING_SHUTDOWN, SERVER_OFFLINE, SERVER_ONLINE, SERVER_TURNING_OFF } from '../constants';
 import { PresenceStatusData, TextChannel } from 'discord.js';
 import moment from 'moment';
 import SSH from 'simple-ssh';
-
-const sshUsername = process.env.SSH_USERNAME || '';
-const sshPassword = process.env.SSH_PASSWORD || '';
-const serverAddress = process.env.SERVER_ADDRESS || '';
-const controlGuild = process.env.GUILD_ID || '';
-const controlChannel = process.env.CHANNEL_ID || '';
-const shutdownIn = (process.env.SHUTDOWN_TIME as unknown as number) || 0; // In seconds
+import {
+    botGraceIn,
+    controlChannel,
+    controlGuild,
+    rconPassword,
+    rconPort,
+    serverAddress,
+    shutdownIn,
+    sshPassword,
+    sshUsername,
+} from '../envVars';
+// @ts-ignore
+import A3Rcon from 'arma3-rcon';
 
 export const checkServer = async (client: ClientWithServerStatus) => {
     const pingResp = await ping.promise.probe(serverAddress);
@@ -32,21 +38,34 @@ const serverOffline = async (client: ClientWithServerStatus) => {
 };
 
 const serverOnline = async (client: ClientWithServerStatus) => {
-    const playerCount = 0; // TODO: Get player count from RCON
-
-    if (playerCount === 0) {
-        await handleZeroPlayers(client);
+    let playerCount;
+    try {
+        playerCount = await getPlayers(); // TODO: Get player count from RCON
+    } catch (err) {
+        console.error(err);
+        await sendMessage(client, String(err));
         return;
     }
 
+    if (client.serverStatus === PENDING_SHUTDOWN) return;
     if (client.serverStatus === SERVER_TURNING_OFF) return;
 
     if (client.serverStatus !== SERVER_ONLINE) {
+        const now = new Date();
+
         console.log('Server is online');
         await sendMessage(client, 'Server is now online.');
         await setPresence(client, `Online - ${playerCount}`, 'online');
         client.playerCount = playerCount;
         client.serverStatus = SERVER_ONLINE;
+
+        const bootGracePeriod = moment(now).add({ seconds: botGraceIn });
+        client.bootGracePeriod = bootGracePeriod.toDate();
+    }
+
+    if (playerCount === 0) {
+        await handleZeroPlayers(client);
+        return;
     }
 
     if (client.playerCount !== playerCount) {
@@ -56,10 +75,28 @@ const serverOnline = async (client: ClientWithServerStatus) => {
     }
 };
 
+const getPlayers = async () => {
+    try {
+        const rconClient = new A3Rcon(serverAddress, rconPort, rconPassword);
+        await rconClient.connect();
+        const resp = await rconClient.getPlayerCount();
+        await rconClient.close();
+        return resp;
+    } catch (err) {
+        console.error(err);
+        return 0;
+    }
+};
+
 const handleZeroPlayers = async (client: ClientWithServerStatus) => {
     const now = new Date();
 
-    client.serverStatus = SERVER_TURNING_OFF;
+    if (client.bootGracePeriod && now < client.bootGracePeriod) {
+        console.log(`Server is empty but in grace period. Grace period lasts until ${client.bootGracePeriod}`);
+        return;
+    }
+
+    client.serverStatus = PENDING_SHUTDOWN;
     if (!client.turnOffTime) {
         console.log('Server is empty, starting shutdown timer');
         const shutdownDateTime = moment(now).add(shutdownIn, 'seconds');
@@ -70,10 +107,12 @@ const handleZeroPlayers = async (client: ClientWithServerStatus) => {
 
         return;
     }
+
     if (now > client.turnOffTime) {
         console.log('Server shutting down');
         try {
             await turnServerOff(client);
+            await sendMessage(client, 'Server is now shutting down');
         } catch (err) {
             console.error(err);
             await sendMessage(client, String(err));
@@ -83,15 +122,17 @@ const handleZeroPlayers = async (client: ClientWithServerStatus) => {
 };
 
 const turnServerOff = async (client: ClientWithServerStatus) => {
+    console.log('Turning server off');
     client.serverStatus = SERVER_TURNING_OFF;
-    client.turnOffTime = undefined;
     try {
         const ssh = new SSH({
-            host: '192.168.0.122',
+            host: serverAddress,
             user: sshUsername,
             pass: sshPassword,
         });
-        ssh.exec('bash shutdown.sh -S', {
+        ssh.exec('sudo bash ./shutdown.sh', {
+            pty: true,
+            out: console.log.bind(console),
             exit(code, stdout, stderr) {
                 console.log(code, stdout, stderr);
             },

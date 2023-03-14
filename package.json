@@ -30,6 +30,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
+    "arma3-rcon": "^1.1.0",
     "axios": "^1.3.4",
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",

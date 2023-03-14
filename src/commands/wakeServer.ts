@@ -1,23 +1,26 @@
 import { ApplicationCommandType, Client, CommandInteraction } from 'discord.js';
-import { Command } from '../types';
+import { ClientWithServerStatus, Command } from '../types';
 import axios from 'axios';
 import IloClient from '../iloClient';
-
-const iloUsername = process.env.ILO_USERNAME || '';
-const iloPassword = process.env.ILO_PASSWORD || '';
+import { botGraceIn, iloPassword, iloUsername } from '../envVars';
+import moment from 'moment';
 
 export const wakeServerCommand: Command = {
     name: 'wake',
     description: 'Wake the server if it is offline',
     type: ApplicationCommandType.ChatInput,
-    run: async (client: Client, interaction: CommandInteraction) => {
+    run: async (client: ClientWithServerStatus, interaction: CommandInteraction) => {
         console.log('Waking server...');
+        const now = new Date();
 
         try {
             const iloClient = new IloClient();
             await iloClient.signIn(iloUsername, iloPassword);
             await iloClient.powerOn(1);
             await iloClient.logout();
+
+            const bootGracePeriod = moment(now).add({ seconds: botGraceIn });
+            client.bootGracePeriod = bootGracePeriod.toDate();
         } catch (err) {
             if (err instanceof axios.AxiosError) {
                 console.log(err.message);
