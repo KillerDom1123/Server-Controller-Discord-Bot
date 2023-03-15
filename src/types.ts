@@ -8,5 +8,5 @@ export interface ClientWithServerStatus extends Client {
     serverStatus?: string;
     playerCount?: number;
     turnOffTime?: Date;
-    bootGracePeriod: Date;
+    bootGracePeriod?: Date;
 }

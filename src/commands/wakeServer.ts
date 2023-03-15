@@ -1,8 +1,8 @@
-import { ApplicationCommandType, Client, CommandInteraction } from 'discord.js';
+import { ApplicationCommandType, CommandInteraction } from 'discord.js';
 import { ClientWithServerStatus, Command } from '../types';
 import axios from 'axios';
 import IloClient from '../iloClient';
-import { botGraceIn, iloPassword, iloUsername } from '../envVars';
+import { bootGraceIn, iloPassword, iloUsername } from '../envVars';
 import moment from 'moment';
 
 export const wakeServerCommand: Command = {
@@ -19,7 +19,7 @@ export const wakeServerCommand: Command = {
             await iloClient.powerOn(1);
             await iloClient.logout();
 
-            const bootGracePeriod = moment(now).add({ seconds: botGraceIn });
+            const bootGracePeriod = moment(now).add({ seconds: bootGraceIn });
             client.bootGracePeriod = bootGracePeriod.toDate();
         } catch (err) {
             if (err instanceof axios.AxiosError) {

@@ -1,11 +1,11 @@
 import ping from 'ping';
 import { ClientWithServerStatus } from '../types';
-import { PENDING_SHUTDOWN, SERVER_OFFLINE, SERVER_ONLINE, SERVER_TURNING_OFF } from '../constants';
+import { PENDING_SHUTDOWN, SERVER_OFFLINE, SERVER_ONLINE, SERVER_PENDING, SERVER_TURNING_OFF } from '../constants';
 import { PresenceStatusData, TextChannel } from 'discord.js';
 import moment from 'moment';
 import SSH from 'simple-ssh';
 import {
-    botGraceIn,
+    bootGraceIn,
     controlChannel,
     controlGuild,
     rconPassword,
@@ -17,6 +17,7 @@ import {
 } from '../envVars';
 // @ts-ignore
 import A3Rcon from 'arma3-rcon';
+import { timeToWordFormat } from '../utils';
 
 export const checkServer = async (client: ClientWithServerStatus) => {
     const pingResp = await ping.promise.probe(serverAddress);
@@ -40,39 +41,40 @@ const serverOffline = async (client: ClientWithServerStatus) => {
 const serverOnline = async (client: ClientWithServerStatus) => {
     let playerCount;
     try {
-        playerCount = await getPlayers(); // TODO: Get player count from RCON
+        playerCount = await getPlayers();
     } catch (err) {
         console.error(err);
         await sendMessage(client, String(err));
         return;
     }
 
-    if (client.serverStatus === PENDING_SHUTDOWN) return;
-    if (client.serverStatus === SERVER_TURNING_OFF) return;
+    if (playerCount === 0 && client.serverStatus !== SERVER_PENDING) await handleZeroPlayers(client);
+    else if (client.serverStatus === SERVER_PENDING) await handleServerCameOnline(client, playerCount);
+    else if (client.playerCount !== playerCount) {
+        if (client.serverStatus !== SERVER_ONLINE) await handleServerCameOnline(client, playerCount);
+        else await setPlayerCountPresence(client, playerCount);
+    }
+    if (playerCount !== 0) client.turnOffTime = undefined;
+};
 
-    if (client.serverStatus !== SERVER_ONLINE) {
-        const now = new Date();
+const setPlayerCountPresence = async (client: ClientWithServerStatus, playerCount: number) => {
+    console.log('Updating player count');
+    await setPresence(client, `Online - ${playerCount}`, 'online');
+    client.playerCount = playerCount;
+};
 
-        console.log('Server is online');
-        await sendMessage(client, 'Server is now online.');
-        await setPresence(client, `Online - ${playerCount}`, 'online');
-        client.playerCount = playerCount;
-        client.serverStatus = SERVER_ONLINE;
+const handleServerCameOnline = async (client: ClientWithServerStatus, playerCount: number) => {
+    console.log('Server is now online');
+    const now = new Date();
 
-        const bootGracePeriod = moment(now).add({ seconds: botGraceIn });
+    if (client.serverStatus === SERVER_PENDING) {
+        const bootGracePeriod = moment(now).add({ seconds: bootGraceIn });
         client.bootGracePeriod = bootGracePeriod.toDate();
+        await sendMessage(client, 'Server is now online.');
     }
+    client.serverStatus = SERVER_ONLINE;
 
-    if (playerCount === 0) {
-        await handleZeroPlayers(client);
-        return;
-    }
-
-    if (client.playerCount !== playerCount) {
-        console.log('Updating player count');
-        await setPresence(client, `Online - ${playerCount}`, 'online');
-        client.serverStatus = SERVER_ONLINE;
-    }
+    await setPlayerCountPresence(client, playerCount);
 };
 
 const getPlayers = async () => {
@@ -81,7 +83,7 @@ const getPlayers = async () => {
         await rconClient.connect();
         const resp = await rconClient.getPlayerCount();
         await rconClient.close();
-        return resp;
+        return parseInt(resp);
     } catch (err) {
         console.error(err);
         return 0;
@@ -102,17 +104,20 @@ const handleZeroPlayers = async (client: ClientWithServerStatus) => {
         const shutdownDateTime = moment(now).add(shutdownIn, 'seconds');
         client.turnOffTime = shutdownDateTime.toDate();
 
-        await sendMessage(client, `Server is empty, shutting down in ${shutdownIn} seconds.`);
-        await setPresence(client, `Shutting down at ???`, 'idle');
-
+        await sendMessage(
+            client,
+            `Server is empty, shutting down in ${shutdownIn > 60 ? shutdownIn / 60 : shutdownIn} ${timeToWordFormat(
+                shutdownIn,
+            )}.`,
+        );
+        await setPresence(client, `Shutting down at ${shutdownDateTime.format('hh:mm:ss')}`, 'idle');
         return;
     }
 
-    if (now > client.turnOffTime) {
+    if (now > client.turnOffTime && client.serverStatus !== SERVER_TURNING_OFF) {
         console.log('Server shutting down');
         try {
             await turnServerOff(client);
-            await sendMessage(client, 'Server is now shutting down');
         } catch (err) {
             console.error(err);
             await sendMessage(client, String(err));
@@ -138,6 +143,8 @@ const turnServerOff = async (client: ClientWithServerStatus) => {
             },
         });
         ssh.start();
+
+        await setPresence(client, 'Server turning off...', 'dnd');
     } catch (err) {
         console.error(err);
         await sendMessage(client, `Error shutting server down! ${err}`);
