@@ -41,9 +41,9 @@ const serverOffline = async (client: ClientWithServerStatus) => {
 
 const serverOnline = async (client: ClientWithServerStatus) => {
     const playerCount = await getPlayers();
-    if (playerCount === 0 && client.serverStatus !== SERVER_PENDING && client.serverStatus !== SERVER_OFFLINE)
-        await handleZeroPlayers(client);
-    else if (client.serverStatus === SERVER_PENDING || client.serverStatus === SERVER_OFFLINE)
+    if (playerCount === 0 && client.serverStatus !== SERVER_PENDING && client.serverStatus !== SERVER_OFFLINE) {
+        await handleZeroPlayers(client, playerCount);
+    } else if (client.serverStatus === SERVER_PENDING || client.serverStatus === SERVER_OFFLINE)
         await handleServerCameOnline(client, playerCount);
     else if (client.playerCount !== playerCount) {
         if (client.serverStatus !== SERVER_ONLINE) await handleServerCameOnline(client, playerCount);
@@ -85,11 +85,14 @@ const getPlayers = async () => {
     }
 };
 
-const handleZeroPlayers = async (client: ClientWithServerStatus) => {
+const handleZeroPlayers = async (client: ClientWithServerStatus, playerCount: number) => {
     const now = new Date();
+
+    client.playerCount = playerCount;
 
     if (client.bootGracePeriod && now < client.bootGracePeriod) {
         console.log(`Server is empty but in grace period. Grace period lasts until ${client.bootGracePeriod}`);
+        await setPlayerCountPresence(client, playerCount);
         return;
     }
 
