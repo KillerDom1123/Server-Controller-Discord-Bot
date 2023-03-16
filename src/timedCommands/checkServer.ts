@@ -16,7 +16,7 @@ import {
     sshUsername,
 } from '../envVars';
 // @ts-ignore
-import A3Rcon from 'arma3-rcon';
+import Arma3Rcon from 'arma3-rcon';
 import { timeToWordFormat } from '../utils';
 
 export const checkServer = async (client: ClientWithServerStatus) => {
@@ -35,21 +35,16 @@ const serverOffline = async (client: ClientWithServerStatus) => {
         await sendMessage(client, 'Server is now offline. Use /wake to turn it on.');
         await setPresence(client, 'Offline', 'dnd');
         client.serverStatus = SERVER_OFFLINE;
+        client.bootGracePeriod = undefined;
     }
 };
 
 const serverOnline = async (client: ClientWithServerStatus) => {
-    let playerCount;
-    try {
-        playerCount = await getPlayers();
-    } catch (err) {
-        console.error(err);
-        await sendMessage(client, String(err));
-        return;
-    }
-
-    if (playerCount === 0 && client.serverStatus !== SERVER_PENDING) await handleZeroPlayers(client);
-    else if (client.serverStatus === SERVER_PENDING) await handleServerCameOnline(client, playerCount);
+    const playerCount = await getPlayers();
+    if (playerCount === 0 && client.serverStatus !== SERVER_PENDING && client.serverStatus !== SERVER_OFFLINE)
+        await handleZeroPlayers(client);
+    else if (client.serverStatus === SERVER_PENDING || client.serverStatus === SERVER_OFFLINE)
+        await handleServerCameOnline(client, playerCount);
     else if (client.playerCount !== playerCount) {
         if (client.serverStatus !== SERVER_ONLINE) await handleServerCameOnline(client, playerCount);
         else await setPlayerCountPresence(client, playerCount);
@@ -67,7 +62,7 @@ const handleServerCameOnline = async (client: ClientWithServerStatus, playerCoun
     console.log('Server is now online');
     const now = new Date();
 
-    if (client.serverStatus === SERVER_PENDING) {
+    if ([SERVER_PENDING, SERVER_OFFLINE].includes(client.serverStatus || '')) {
         const bootGracePeriod = moment(now).add({ seconds: bootGraceIn });
         client.bootGracePeriod = bootGracePeriod.toDate();
         await sendMessage(client, 'Server is now online.');
@@ -79,7 +74,7 @@ const handleServerCameOnline = async (client: ClientWithServerStatus, playerCoun
 
 const getPlayers = async () => {
     try {
-        const rconClient = new A3Rcon(serverAddress, rconPort, rconPassword);
+        const rconClient = new Arma3Rcon(serverAddress, rconPort, rconPassword);
         await rconClient.connect();
         const resp = await rconClient.getPlayerCount();
         await rconClient.close();

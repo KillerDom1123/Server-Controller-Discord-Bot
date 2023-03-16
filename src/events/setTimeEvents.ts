@@ -4,8 +4,10 @@ import { ClientWithServerStatus } from '../types';
 
 const setTimedEvents = (client: ClientWithServerStatus) => {
     setInterval(async () => {
+        const now = new Date();
         await checkServer(client);
         console.log('Stats', {
+            now,
             clientPlayerCount: client.playerCount,
             clientServerStatus: client.serverStatus,
             clientTurnOffTime: client.turnOffTime,
