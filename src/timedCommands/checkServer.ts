@@ -8,16 +8,19 @@ import {
     bootGraceIn,
     controlChannel,
     controlGuild,
-    rconPassword,
-    rconPort,
     serverAddress,
     shutdownIn,
     sshPassword,
     sshUsername,
 } from '../envVars';
-// @ts-ignore
-import Arma3Rcon from 'arma3-rcon';
+
 import { timeToWordFormat } from '../utils';
+import { armaGetPlayers, minecraftGetPlayers } from './getPlayerCount';
+
+const getPlayerCountMap = {
+    minecraft: minecraftGetPlayers,
+    arma3: armaGetPlayers,
+};
 
 export const checkServer = async (client: ClientWithServerStatus) => {
     const pingResp = await ping.promise.probe(serverAddress);
@@ -40,7 +43,7 @@ const serverOffline = async (client: ClientWithServerStatus) => {
 };
 
 const serverOnline = async (client: ClientWithServerStatus) => {
-    const playerCount = await getPlayers();
+    const playerCount = await getPlayers(client);
     if (playerCount === 0 && client.serverStatus !== SERVER_PENDING && client.serverStatus !== SERVER_OFFLINE) {
         await handleZeroPlayers(client, playerCount);
     } else if (client.serverStatus === SERVER_PENDING || client.serverStatus === SERVER_OFFLINE)
@@ -50,6 +53,15 @@ const serverOnline = async (client: ClientWithServerStatus) => {
         else await setPlayerCountPresence(client, playerCount);
     }
     if (playerCount !== 0) client.turnOffTime = undefined;
+};
+
+const getPlayers = async (client: ClientWithServerStatus) => {
+    const getPlayerCountFn = getPlayerCountMap[(client.profile as keyof typeof getPlayerCountMap) || ''];
+    if (typeof getPlayerCountFn === undefined) {
+        console.error(`Unable to get profile - ${client.profile}`);
+        return 0;
+    }
+    return await getPlayerCountFn();
 };
 
 const setPlayerCountPresence = async (client: ClientWithServerStatus, playerCount: number) => {
@@ -70,19 +82,6 @@ const handleServerCameOnline = async (client: ClientWithServerStatus, playerCoun
     client.serverStatus = SERVER_ONLINE;
 
     await setPlayerCountPresence(client, playerCount);
-};
-
-const getPlayers = async () => {
-    try {
-        const rconClient = new Arma3Rcon(serverAddress, rconPort, rconPassword);
-        await rconClient.connect();
-        const resp = await rconClient.getPlayerCount();
-        await rconClient.close();
-        return parseInt(resp);
-    } catch (err) {
-        console.error(err);
-        return 0;
-    }
 };
 
 const handleZeroPlayers = async (client: ClientWithServerStatus, playerCount: number) => {

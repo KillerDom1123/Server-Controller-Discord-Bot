@@ -36,6 +36,7 @@
     "dotenv": "^16.0.3",
     "moment": "^2.29.4",
     "node": "^19.6.1",
+    "node-mcstatus": "^1.0.2",
     "ping": "^0.4.4",
     "simple-ssh": "^1.1.1"
   }
