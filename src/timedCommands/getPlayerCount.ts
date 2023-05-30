@@ -1,7 +1,7 @@
 // @ts-ignore
 import Arma3Rcon from 'arma3-rcon';
 import * as mc from 'node-mcstatus';
-import { rconPassword, rconPort, serverAddress, serverPort } from '../envVars';
+import { mcServerAddress, rconPassword, rconPort, serverAddress, serverPort } from '../envVars';
 import { logger } from '../logger';
 
 export const armaGetPlayers = async () => {
@@ -21,8 +21,7 @@ export const armaGetPlayers = async () => {
 export const minecraftGetPlayers = async () => {
     logger.info('Execute minecraftGetPlayers');
     try {
-        const resp = await mc.statusJava(serverAddress, parseInt(serverPort.toString()));
-        logger.info(resp);
+        const resp = await mc.statusJava(mcServerAddress, parseInt(serverPort.toString()));
         const playerCount = resp?.players?.online || 0;
         return playerCount;
     } catch (err) {

@@ -2,6 +2,7 @@ export const rconPassword = process.env.RCON_PASSWORD || '';
 export const sshUsername = process.env.SSH_USERNAME || '';
 export const sshPassword = process.env.SSH_PASSWORD || '';
 export const serverAddress = process.env.SERVER_ADDRESS || '';
+export const mcServerAddress = process.env.MC_SERVER_ADDRESS || '';
 export const serverPort = (process.env.SERVER_PORT as unknown as number) || 25565;
 export const controlGuild = process.env.GUILD_ID || '';
 export const controlChannel = process.env.CHANNEL_ID || '';

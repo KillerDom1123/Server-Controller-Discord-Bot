@@ -39,6 +39,7 @@
     "node-mcstatus": "^1.0.2",
     "ping": "^0.4.4",
     "pino": "^8.14.1",
+    "pino-pretty": "^10.0.0",
     "simple-ssh": "^1.1.1"
   }
 }
