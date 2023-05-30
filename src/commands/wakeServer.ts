@@ -11,7 +11,7 @@ export const wakeServerCommand: Command = {
     description: 'Wake the server if it is offline',
     type: ApplicationCommandType.ChatInput,
     run: async (client: ClientWithServerStatus, interaction: CommandInteraction) => {
-        logger.info('Waking server...');
+        logger.info(`Server awoken by ${interaction.user.username}`);
         const now = new Date();
 
         try {

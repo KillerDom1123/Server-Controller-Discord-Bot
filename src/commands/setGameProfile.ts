@@ -25,7 +25,7 @@ export const setGameProfileCommand: Command = {
 
     run: async (client: ClientWithServerStatus, interaction: CommandInteraction) => {
         const selectedProfile = interaction.options.get('game')?.value as string;
-        logger.info(`Changed to profile ${selectedProfile}`);
+        logger.info(`Changed to profile ${selectedProfile} by ${interaction.user.username}`);
         if (!validProfiles.includes(selectedProfile)) {
             await interaction.followUp({
                 content: `Invalid profile`,
