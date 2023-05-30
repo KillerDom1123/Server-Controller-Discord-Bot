@@ -4,13 +4,14 @@ import axios from 'axios';
 import IloClient from '../iloClient';
 import { bootGraceIn, iloPassword, iloUsername } from '../envVars';
 import moment from 'moment';
+import { logger } from '../logger';
 
 export const wakeServerCommand: Command = {
     name: 'wake',
     description: 'Wake the server if it is offline',
     type: ApplicationCommandType.ChatInput,
     run: async (client: ClientWithServerStatus, interaction: CommandInteraction) => {
-        console.log('Waking server...');
+        logger.info('Waking server...');
         const now = new Date();
 
         try {
@@ -23,7 +24,7 @@ export const wakeServerCommand: Command = {
             client.bootGracePeriod = bootGracePeriod.toDate();
         } catch (err) {
             if (err instanceof axios.AxiosError) {
-                console.log(err.message);
+                logger.info(err.message);
                 await interaction.followUp({
                     content: err.message,
                 });

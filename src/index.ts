@@ -5,8 +5,9 @@ import ready from './events/ready';
 import interactionCreate from './events/interactionCreate';
 import { ClientWithServerStatus } from './types';
 import { discordToken } from './envVars';
+import { logger } from './logger';
 
-console.log('Bot is starting...');
+logger.info('Bot is starting...');
 
 export const client = new Client({
     intents: [],
@@ -16,4 +17,4 @@ export const client = new Client({
     ready(client);
     interactionCreate(client);
     await client.login(discordToken);
-})().catch((err) => console.error(err));
+})().catch((err) => logger.error(err));

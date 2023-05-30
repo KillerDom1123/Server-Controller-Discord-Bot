@@ -1,4 +1,5 @@
 import axios, { isAxiosError } from 'axios';
+import { logger } from './logger';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // VERY BAD - REMOVE IF USING AXIOS ELSEWHERE!!!
 
@@ -23,7 +24,7 @@ class IloClient {
     }
 
     public async signIn(username: string, password: string) {
-        console.log('Logging in');
+        logger.info('Logging in');
         try {
             const resp = await axiosClient.post(`${baseIloUrl}/SessionService/Sessions/`, {
                 UserName: username,
@@ -41,32 +42,32 @@ class IloClient {
             this.isLoggedIn = true;
         } catch (err) {
             if (isAxiosError(err)) {
-                console.error(err.message);
+                logger.error(err.message);
             } else {
-                console.error(err);
+                logger.error(err);
             }
             throw err;
         }
     }
 
     public async logout() {
-        console.log('Logging out');
+        logger.info('Logging out');
         if (!this.isLoggedIn || !this.sessionLocation) throw new Error('Client not logged in!');
 
         try {
             await axiosClient.delete(this.sessionLocation, axiosConfig);
         } catch (err) {
             if (isAxiosError(err)) {
-                console.error(err.message, err.response?.data);
+                logger.error(err.message, err.response?.data);
             } else {
-                console.error(err);
+                logger.error(err);
             }
             throw err;
         }
     }
 
     public async powerOn(systemId: number) {
-        console.log('Powering on');
+        logger.info('Powering on');
         if (!this.isLoggedIn || !this.sessionLocation) throw new Error('Client not logged in!');
 
         try {
@@ -80,16 +81,16 @@ class IloClient {
             );
         } catch (err) {
             if (isAxiosError(err)) {
-                console.error(err.message, err.response?.data);
+                logger.error(err.message, err.response?.data);
             } else {
-                console.error(err);
+                logger.error(err);
             }
             throw err;
         }
     }
 
     public async powerOff(systemId: number) {
-        console.log('Powering off');
+        logger.info('Powering off');
         if (!this.isLoggedIn || !this.sessionLocation) throw new Error('Client not logged in!');
 
         try {
@@ -103,9 +104,9 @@ class IloClient {
             );
         } catch (err) {
             if (isAxiosError(err)) {
-                console.error(err.message, err.response?.data);
+                logger.error(err.message, err.response?.data);
             } else {
-                console.error(err);
+                logger.error(err);
             }
             throw err;
         }

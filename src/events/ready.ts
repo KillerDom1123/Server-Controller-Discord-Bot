@@ -1,5 +1,6 @@
 import commands from '../commands';
 import { SERVER_PENDING } from '../constants';
+import { logger } from '../logger';
 import { ClientWithServerStatus } from '../types';
 import { lastProfileFileName, validProfiles } from '../utils';
 import setTimedEvents from './setTimeEvents';
@@ -37,6 +38,6 @@ export default (client: ClientWithServerStatus) => {
 
         setTimedEvents(client);
 
-        console.log('Bot online');
+        logger.info('Bot online');
     });
 };

@@ -1,4 +1,5 @@
 import { checkServerInterval } from '../envVars';
+import { logger } from '../logger';
 import { checkServer } from '../timedCommands/checkServer';
 import { ClientWithServerStatus } from '../types';
 
@@ -6,7 +7,7 @@ const setTimedEvents = (client: ClientWithServerStatus) => {
     setInterval(async () => {
         const now = new Date();
         await checkServer(client);
-        console.log('Stats', {
+        logger.info('Stats', {
             now,
             clientPlayerCount: client.playerCount,
             clientServerStatus: client.serverStatus,

@@ -2,6 +2,7 @@ import { ApplicationCommandType, CommandInteraction, ApplicationCommandOptionTyp
 import { ClientWithServerStatus, Command } from '../types';
 import { lastProfileFileName, validProfiles } from '../utils';
 import fs from 'fs';
+import { logger } from '../logger';
 
 export const setGameProfileCommand: Command = {
     name: 'profile',
@@ -24,7 +25,7 @@ export const setGameProfileCommand: Command = {
 
     run: async (client: ClientWithServerStatus, interaction: CommandInteraction) => {
         const selectedProfile = interaction.options.get('game')?.value as string;
-        console.log(`Changed to profile ${selectedProfile}`);
+        logger.info(`Changed to profile ${selectedProfile}`);
         if (!validProfiles.includes(selectedProfile)) {
             await interaction.followUp({
                 content: `Invalid profile`,

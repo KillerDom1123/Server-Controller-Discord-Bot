@@ -2,9 +2,10 @@
 import Arma3Rcon from 'arma3-rcon';
 import * as mc from 'node-mcstatus';
 import { rconPassword, rconPort, serverAddress, serverPort } from '../envVars';
+import { logger } from '../logger';
 
 export const armaGetPlayers = async () => {
-    console.log('Execute armaGetPlayers');
+    logger.info('Execute armaGetPlayers');
     try {
         const rconClient = new Arma3Rcon(serverAddress, rconPort, rconPassword);
         await rconClient.connect();
@@ -12,20 +13,20 @@ export const armaGetPlayers = async () => {
         await rconClient.close();
         return parseInt(resp);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         return 0;
     }
 };
 
 export const minecraftGetPlayers = async () => {
-    console.log('Execute minecraftGetPlayers');
+    logger.info('Execute minecraftGetPlayers');
     try {
         const resp = await mc.statusJava(serverAddress, parseInt(serverPort.toString()));
-        console.log(resp);
+        logger.info(resp);
         const playerCount = resp?.players?.online || 0;
         return playerCount;
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         return 0;
     }
 };
