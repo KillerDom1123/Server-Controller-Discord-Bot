@@ -22,6 +22,7 @@ In order to use this bot, you will need the following:
 -   GUILD_ID: The Discord server's ID
 -   CHANNEL_ID: The Discord channel's ID
 -   SERVER_ADDRESS: The IP address of the server, this will be used to SSH onto and RCON
+-   MC_SERVER_ADDRESS: The IP address of the Minecraft server, checks how many people are on the Minecraft server using node-mcstatus, which is an external API
 -   ILO_ADDRESS: The IP address for ILO
 -   ILO_USERNAME: The ILO username
 -   ILO_PASSWORD: The ILO password
@@ -38,6 +39,20 @@ In order to use this bot, you will need the following:
 Once the bot is running, you can control your server by using the following commands in Discord:
 
 /wake: Sends a POST request to the ILO 4 REST API to turn on the server.
+
+/profile <profile name>: Set the game profile for the bot to use
+
+## Profiles
+
+Profiles are a way to change how the bot checks how many people are on a specific server. Currently there are only two profiles, you can change the profile the bot is using by using `/profile <profile name>`.
+
+The two valid profiles are:
+- minecraft
+- arma3
+
+When the profile gets changed, the new profile is saved to a `lastProfile.txt` file, which gets read when the bot first starts up. Doing this means that the bot can use the last profile without a user having the change it after rebooting.
+
+Currently there is no way to see what profile is currently selected
 
 ## Forewarnings
 

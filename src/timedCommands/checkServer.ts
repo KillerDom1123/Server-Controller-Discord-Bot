@@ -8,16 +8,20 @@ import {
     bootGraceIn,
     controlChannel,
     controlGuild,
-    rconPassword,
-    rconPort,
     serverAddress,
     shutdownIn,
     sshPassword,
     sshUsername,
 } from '../envVars';
-// @ts-ignore
-import Arma3Rcon from 'arma3-rcon';
+
 import { timeToWordFormat } from '../utils';
+import { armaGetPlayers, minecraftGetPlayers } from './getPlayerCount';
+import { logger } from '../logger';
+
+const getPlayerCountMap = {
+    minecraft: minecraftGetPlayers,
+    arma3: armaGetPlayers,
+};
 
 export const checkServer = async (client: ClientWithServerStatus) => {
     const pingResp = await ping.promise.probe(serverAddress);
@@ -31,7 +35,7 @@ export const checkServer = async (client: ClientWithServerStatus) => {
 
 const serverOffline = async (client: ClientWithServerStatus) => {
     if (client.serverStatus !== SERVER_OFFLINE) {
-        console.log('Server is offline');
+        logger.info('Server is offline');
         await sendMessage(client, 'Server is now offline. Use /wake to turn it on.');
         await setPresence(client, 'Offline', 'dnd');
         client.serverStatus = SERVER_OFFLINE;
@@ -40,7 +44,7 @@ const serverOffline = async (client: ClientWithServerStatus) => {
 };
 
 const serverOnline = async (client: ClientWithServerStatus) => {
-    const playerCount = await getPlayers();
+    const playerCount = await getPlayers(client);
     if (playerCount === 0 && client.serverStatus !== SERVER_PENDING && client.serverStatus !== SERVER_OFFLINE) {
         await handleZeroPlayers(client, playerCount);
     } else if (client.serverStatus === SERVER_PENDING || client.serverStatus === SERVER_OFFLINE)
@@ -52,14 +56,23 @@ const serverOnline = async (client: ClientWithServerStatus) => {
     if (playerCount !== 0) client.turnOffTime = undefined;
 };
 
+const getPlayers = async (client: ClientWithServerStatus) => {
+    const getPlayerCountFn = getPlayerCountMap[(client.profile as keyof typeof getPlayerCountMap) || ''];
+    if (typeof getPlayerCountFn === undefined) {
+        logger.error(`Unable to get profile - ${client.profile}`);
+        return 0;
+    }
+    return await getPlayerCountFn();
+};
+
 const setPlayerCountPresence = async (client: ClientWithServerStatus, playerCount: number) => {
-    console.log('Updating player count');
+    logger.info('Updating player count');
     await setPresence(client, `Online - ${playerCount}`, 'online');
     client.playerCount = playerCount;
 };
 
 const handleServerCameOnline = async (client: ClientWithServerStatus, playerCount: number) => {
-    console.log('Server is now online');
+    logger.info('Server is now online');
     const now = new Date();
 
     if ([SERVER_PENDING, SERVER_OFFLINE].includes(client.serverStatus || '')) {
@@ -72,33 +85,20 @@ const handleServerCameOnline = async (client: ClientWithServerStatus, playerCoun
     await setPlayerCountPresence(client, playerCount);
 };
 
-const getPlayers = async () => {
-    try {
-        const rconClient = new Arma3Rcon(serverAddress, rconPort, rconPassword);
-        await rconClient.connect();
-        const resp = await rconClient.getPlayerCount();
-        await rconClient.close();
-        return parseInt(resp);
-    } catch (err) {
-        console.error(err);
-        return 0;
-    }
-};
-
 const handleZeroPlayers = async (client: ClientWithServerStatus, playerCount: number) => {
     const now = new Date();
 
     client.playerCount = playerCount;
 
     if (client.bootGracePeriod && now < client.bootGracePeriod) {
-        console.log(`Server is empty but in grace period. Grace period lasts until ${client.bootGracePeriod}`);
+        logger.info(`Server is empty but in grace period. Grace period lasts until ${client.bootGracePeriod}`);
         await setPlayerCountPresence(client, playerCount);
         return;
     }
 
     client.serverStatus = PENDING_SHUTDOWN;
     if (!client.turnOffTime) {
-        console.log('Server is empty, starting shutdown timer');
+        logger.info('Server is empty, starting shutdown timer');
         const shutdownDateTime = moment(now).add(shutdownIn, 'seconds');
         client.turnOffTime = shutdownDateTime.toDate();
 
@@ -113,11 +113,11 @@ const handleZeroPlayers = async (client: ClientWithServerStatus, playerCount: nu
     }
 
     if (now > client.turnOffTime && client.serverStatus !== SERVER_TURNING_OFF) {
-        console.log('Server shutting down');
+        logger.info('Server shutting down');
         try {
             await turnServerOff(client);
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             await sendMessage(client, String(err));
         }
         return;
@@ -125,7 +125,7 @@ const handleZeroPlayers = async (client: ClientWithServerStatus, playerCount: nu
 };
 
 const turnServerOff = async (client: ClientWithServerStatus) => {
-    console.log('Turning server off');
+    logger.info('Turning server off');
     client.serverStatus = SERVER_TURNING_OFF;
     try {
         const ssh = new SSH({
@@ -144,7 +144,7 @@ const turnServerOff = async (client: ClientWithServerStatus) => {
 
         await setPresence(client, 'Server turning off...', 'dnd');
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         await sendMessage(client, `Error shutting server down! ${err}`);
     }
 };
@@ -156,7 +156,7 @@ const sendMessage = async (client: ClientWithServerStatus, message: string) => {
     if (channel?.isTextBased()) {
         await (channel as TextChannel).send(message);
     } else {
-        console.error('Control channel is not text based?');
+        logger.error('Control channel is not text based?');
     }
 };
 
