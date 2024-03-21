@@ -1,9 +1,11 @@
 import { ApplicationCommandOptionType, ApplicationCommandType, CommandInteraction } from 'discord.js';
-import { ClientExtended, Command } from '../types';
+import { ClientExtended, Command } from '../types/types';
 import { GuildServer } from '../db/servers';
 import { randomUUID } from 'crypto';
 import { getPort } from '../utils';
 import logger, { getCommandLogInfo } from '../logging';
+import webserverClient from '../webserverClient';
+import { isAxiosError } from 'axios';
 
 export const createServer: Command = {
     name: 'createserver',
@@ -54,13 +56,43 @@ export const createServer: Command = {
         );
 
         const server = new GuildServer(guildId, serverId, serverName, game, port, lastActive);
-        server.create();
+
+        try {
+            console.log('Do a thing');
+            const resp = await webserverClient.createServer(server);
+            console.log(resp);
+        } catch (err: unknown) {
+            console.error('AAAAAAAAAA');
+            if (isAxiosError(err)) {
+                console.log(err);
+                return;
+            }
+            console.log(err);
+        }
+
+        // server.create();
         // server.create;
 
-        logger.info({ ...getCommandLogInfo(interaction), serverId }, 'createServer: Created new server');
+        // logger.info({ ...getCommandLogInfo(interaction), serverId }, 'createServer: Created new server');
+
+        // const serverDirectory = await createDirectory(guildId, serverId);
+        // console.log(serverDirectory);
 
         await interaction.followUp({
             content: 'yeet',
         });
     },
 };
+
+// const createDirectory = async (guildId: string, serverId: string) => {
+//     const guildDirExists =
+//         (await sshConnection.execCommand(`if test -d ~/servers/${guildId}; then echo "true";`)).stdout === 'true';
+
+//     if (!guildDirExists) {
+//         await sshConnection.execCommand(`mkdir ~/servers/${guildId}`);
+//     }
+
+//     await sshConnection.execCommand(`mkdir ~/servers/${guildId}/${serverId}`);
+
+//     return `~/servers/${guildId}/${serverId}`;
+// };

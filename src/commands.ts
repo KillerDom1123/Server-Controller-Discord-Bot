@@ -1,6 +1,6 @@
 import { createServer } from './commands/createServer';
 import { getServers } from './commands/getServers';
-import { Command } from './types';
+import { Command } from './types/types';
 
 const commands: Command[] = [getServers, createServer];
 

@@ -1,5 +1,5 @@
 import db, { decodeObject } from '.';
-import { GuildServerListType, GuildServerType } from '../iots';
+import { GuildServerListType, GuildServerType } from '../types/iots';
 
 export class GuildServer {
     guildId: string;

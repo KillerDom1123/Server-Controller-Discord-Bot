@@ -3,13 +3,13 @@
         "lib": [
             "es2023"
         ],
-        "module": "node16",
+        "module": "commonjs",
         "target": "es2022",
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "moduleResolution": "node16",
+        "moduleResolution": "node10",
         "allowUnusedLabels": false,
         "allowUnreachableCode": false,
         "exactOptionalPropertyTypes": true,
@@ -22,6 +22,8 @@
         "noUnusedParameters": true,
         "isolatedModules": true,
         "checkJs": true,
+        "ignoreDeprecations": "5.0",
+        "noImplicitAny": true
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*", "webserver/**/*"]
 }

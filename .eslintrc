@@ -4,6 +4,7 @@
     "parserOptions": {
         "project": "./tsconfig.json"
     },
+    "ignorePatterns": ["./webserver/**/*"],
     "plugins": [
         "@typescript-eslint",
         "prettier"

@@ -1,5 +1,5 @@
 import { ApplicationCommandType, CommandInteraction } from 'discord.js';
-import { ClientExtended, Command } from '../types';
+import { ClientExtended, Command } from '../types/types';
 import { getServersForGuild } from '../db/servers';
 import logger, { getCommandLogInfo } from '../logging';
 

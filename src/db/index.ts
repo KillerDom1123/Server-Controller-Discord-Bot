@@ -8,6 +8,12 @@ const dbFile = 'servers-db.json';
 
 const db = new JSONdb(dbFile);
 
+/**
+ * Decode an object using an io-ts type.
+ * @param obj - The object to decode.
+ * @param objType - The io-ts type to decode the object with.
+ * @returns The decoded object.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const decodeObject = (obj: any, objType: any): any => {
     let result;
