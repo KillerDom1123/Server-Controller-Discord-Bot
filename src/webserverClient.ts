@@ -1,6 +1,9 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import { GuildServer } from './db/servers';
 import { serverWebAddress } from './env';
+import * as t from 'io-ts';
+import { decodeObject } from './utils/db';
+import { CreateServerResponse } from './types';
 
 const secretToken = process.env['WEB_SERVER_SECRET_TOKEN'] || 'devSecret';
 const BASE_URL = serverWebAddress;
@@ -14,7 +17,7 @@ class WebserverClient {
      * @param config - The axios request config, with the url, method, etc set.
      * @returns The response data from the webserver.
      */
-    private makeRequest = async (config: AxiosRequestConfig) => {
+    private makeRequest = async <T>(config: AxiosRequestConfig, decodeType: t.Type<T>) => {
         const response = await axios.request({
             ...config,
             headers: {
@@ -24,18 +27,8 @@ class WebserverClient {
             },
         });
 
-        return response.data;
-    };
-
-    /**
-     * Ping the webserver.
-     * @returns The response from the webserver.
-     */
-    public ping = async () => {
-        return this.makeRequest({
-            method: 'GET',
-            url: `${BASE_URL}/ping`,
-        });
+        const decodedData = decodeObject(response.data, decodeType);
+        return decodedData;
     };
 
     /**
@@ -44,15 +37,18 @@ class WebserverClient {
      * @returns TODO
      */
     public createServer = async (guildServer: GuildServer) => {
-        const { guildId, serverId, name, game, port } = guildServer;
-        const serverVals = { guildId, serverId, name, game, port };
+        const { guildId, name, game, port } = guildServer;
+        const serverVals = { guildId, name, game, port };
 
         // TODO: Sure up response and decode, etc
-        return await this.makeRequest({
-            method: 'POST',
-            url: `${BASE_URL}/server`,
-            data: serverVals,
-        });
+        return await this.makeRequest(
+            {
+                method: 'POST',
+                url: `${BASE_URL}/server`,
+                data: serverVals,
+            },
+            CreateServerResponse,
+        );
     };
 }
 

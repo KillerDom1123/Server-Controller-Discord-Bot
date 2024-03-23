@@ -1,12 +1,17 @@
 import { ApplicationCommandOptionType, ApplicationCommandType, CommandInteraction } from 'discord.js';
-import { ClientExtended, Command } from '../types/types';
+import { ClientExtended, Command } from '../types/discordTypes';
 import { GuildServer } from '../db/servers';
-import { randomUUID } from 'crypto';
 import { getPort } from '../utils';
 import logger, { getCommandLogInfo } from '../logging';
 import webserverClient from '../webserverClient';
 import { isAxiosError } from 'axios';
 
+/**
+ * Slash command to create a server for the guild.
+ *
+ * Sends a POST request to the webserver to create a user on the server.
+ * Returns the username and password so the user can access the server via FTP.
+ */
 export const createServer: Command = {
     name: 'createserver',
     description: 'Create a server for this guild',
@@ -45,54 +50,42 @@ export const createServer: Command = {
         const serverName = String(interaction.options.get('servername')?.value);
         const game = String(interaction.options.get('game')?.value);
 
-        const serverId = randomUUID();
         const port = await getPort();
 
         const lastActive = new Date();
 
         logger.debug(
-            { ...getCommandLogInfo(interaction), serverName, game, serverId, port },
+            { ...getCommandLogInfo(interaction), serverName, game, port },
             'createServer: Got following information',
         );
 
-        const server = new GuildServer(guildId, serverId, serverName, game, port, lastActive);
+        const server = new GuildServer(guildId, serverName, game, port, lastActive);
 
         try {
-            console.log('Do a thing');
             const resp = await webserverClient.createServer(server);
-            console.log(resp);
+            logger.info(
+                { ...getCommandLogInfo(interaction), username: resp.username },
+                'createServer: Created server successfully',
+            );
+
+            server.username = resp.username;
+
+            await interaction.user.send(`Username: ${resp.username}\nPassword: ${resp.password}`);
+            await interaction.followUp({
+                content: `Server created successfully. <@${interaction.user.id}> check your DMs for the server FTP credentials.`,
+            });
+
+            server.create();
+            return;
         } catch (err: unknown) {
-            console.error('AAAAAAAAAA');
             if (isAxiosError(err)) {
                 console.log(err);
                 return;
             }
-            console.log(err);
         }
 
-        // server.create();
-        // server.create;
-
-        // logger.info({ ...getCommandLogInfo(interaction), serverId }, 'createServer: Created new server');
-
-        // const serverDirectory = await createDirectory(guildId, serverId);
-        // console.log(serverDirectory);
-
         await interaction.followUp({
-            content: 'yeet',
+            content: 'An error occurred while creating the server. Please try again later.',
         });
     },
 };
-
-// const createDirectory = async (guildId: string, serverId: string) => {
-//     const guildDirExists =
-//         (await sshConnection.execCommand(`if test -d ~/servers/${guildId}; then echo "true";`)).stdout === 'true';
-
-//     if (!guildDirExists) {
-//         await sshConnection.execCommand(`mkdir ~/servers/${guildId}`);
-//     }
-
-//     await sshConnection.execCommand(`mkdir ~/servers/${guildId}/${serverId}`);
-
-//     return `~/servers/${guildId}/${serverId}`;
-// };

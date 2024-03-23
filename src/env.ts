@@ -5,3 +5,4 @@ export const serverUsername = process.env['SERVER_USERNAME'] || 'debug';
 export const serverPassword = process.env['SERVER_PASSWORD'] || 'debug';
 
 export const serverWebAddress = 'http://192.168.0.68:3001'; //  process.env['SERVER_WEB_ADDRESS'] || 'debug;
+export const DB_FILE = 'db.json';

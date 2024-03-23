@@ -3,7 +3,7 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import { discordToken } from './env';
 import ready from './events/ready';
 import interactionCreate from './events/interactionCreate';
-import { ClientExtended } from './types/types';
+import { ClientExtended } from './types/discordTypes';
 
 export const client = new Client({
     intents: [GatewayIntentBits.GuildMessages],

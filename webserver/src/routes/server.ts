@@ -46,5 +46,5 @@ export const postServer = async (req: Request, res: Response) => {
 
     console.error(username, password, serverFileLocation);
 
-    return res.status(200).json({ username, password, serverFileLocation });
+    return res.status(200).json({ username, password });
 };

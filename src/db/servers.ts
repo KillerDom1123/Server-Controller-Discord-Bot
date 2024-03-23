@@ -1,39 +1,44 @@
-import db, { decodeObject } from '.';
-import { GuildServerListType, GuildServerType } from '../types/iots';
+import db from '.';
+import { GuildServerListType, GuildServerType } from '../types';
+import { decodeObject } from '../utils/db';
 
 export class GuildServer {
     guildId: string;
-    serverId: string;
     name: string;
     game: string;
     port: number;
     lastActive: Date;
+    username: string | undefined;
 
-    constructor(guildId: string, serverId: string, name: string, game: string, port: number, lastActive: Date) {
+    constructor(guildId: string, name: string, game: string, port: number, lastActive: Date, username?: string) {
         this.guildId = guildId;
-        this.serverId = serverId;
         this.name = name;
         this.game = game;
         this.port = port;
         this.lastActive = lastActive;
+        this.username = username;
     }
 
     static fromDb = (dbServer: GuildServerType) => {
-        const { guildId, serverId, name, game, port, lastActive } = dbServer;
-        return new GuildServer(guildId, serverId, name, game, port, new Date(lastActive));
+        const { guildId, username, name, game, port, lastActive } = dbServer;
+        return new GuildServer(guildId, name, game, port, new Date(lastActive), username);
     };
 
     saveToDb = () => {
         const vals = {
             guildId: this.guildId,
-            serverId: this.serverId,
+            username: this.username,
             name: this.name,
             game: this.game,
             port: this.port,
             lastActive: this.lastActive.toISOString(),
         };
 
-        db.set(serverKey(this.guildId, this.serverId), vals);
+        if (!this.username) {
+            throw new Error('Username not set');
+        }
+
+        db.set(serverKey(this.guildId, this.username), vals);
     };
 
     create = () => {
@@ -41,34 +46,38 @@ export class GuildServer {
         if (!serverList)
             serverList = {
                 guildId: this.guildId,
-                serverIds: [],
+                usernames: [],
             };
 
-        serverList.serverIds.push(this.serverId);
+        if (!this.username) {
+            throw new Error('Username not set');
+        }
+
+        serverList.usernames.push(this.username);
         this.saveToDb();
         db.set(serversKey(this.guildId), serverList);
     };
 
     getPlayerCount = async () => {
+        // TODO
         const playerCount = 1;
-        if (playerCount < 0) this.lastActive = new Date();
-
         return playerCount;
     };
 
     getStatus = async () => {
+        // TODO
         return 'idk';
     };
 }
 
 const serversKey = (guildId: string) => `${guildId}/servers`;
-const serverKey = (guildId: string, serverId: string) => `${guildId}/servers/${serverId}`;
+const serverKey = (guildId: string, username: string) => `${guildId}/servers/${username}`;
 
 const getDbServerList = (guildId: string) => {
     const dbServersList = db.get(serversKey(guildId));
     if (!dbServersList) return;
 
-    const decodedServersList = decodeObject(dbServersList, GuildServerListType) as GuildServerListType;
+    const decodedServersList = decodeObject(dbServersList, GuildServerListType);
     return decodedServersList;
 };
 
@@ -76,12 +85,11 @@ export const getDbServersForGuild = (guildId: string) => {
     const dbServersList = getDbServerList(guildId);
     if (!dbServersList) return [];
 
-    const decodedServersList = decodeObject(dbServersList, GuildServerListType) as GuildServerListType;
+    const decodedServersList = decodeObject(dbServersList, GuildServerListType);
 
-    const servers = decodedServersList.serverIds.map((serverId) => {
-        const dbServer = db.get(serverKey(guildId, serverId)) || {};
-        console.log(typeof dbServer.lastActive, dbServer, dbServer.lastActive);
-        const decodedServer = decodeObject(dbServer, GuildServerType) as GuildServerType;
+    const servers = decodedServersList.usernames.map((username) => {
+        const dbServer = db.get(serverKey(guildId, username)) || {};
+        const decodedServer = decodeObject(dbServer, GuildServerType);
         return decodedServer;
     });
 
@@ -95,10 +103,10 @@ export const getServersForGuild = (guildId: string) => {
     return servers;
 };
 
-export const getServerForGuildWithId = (guildId: string, serverId: string) => {
-    const key = serverKey(guildId, serverId);
+export const getServerForGuildWithId = (guildId: string, username: string) => {
+    const key = serverKey(guildId, username);
     const dbServer = db.get(key) || {};
-    const decodedServer = decodeObject(dbServer, GuildServerType) as GuildServerType;
+    const decodedServer = decodeObject(dbServer, GuildServerType);
 
     return GuildServer.fromDb(decodedServer!);
 };

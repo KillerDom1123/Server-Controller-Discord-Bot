@@ -1,5 +1,5 @@
 import { ApplicationCommandType, CommandInteraction } from 'discord.js';
-import { ClientExtended, Command } from '../types/types';
+import { ClientExtended, Command } from '../types/discordTypes';
 import { getServersForGuild } from '../db/servers';
 import logger, { getCommandLogInfo } from '../logging';
 
@@ -28,11 +28,8 @@ export const getServers: Command = {
                 await server.getPlayerCount(),
                 await server.getStatus(),
             ].join(' | ');
-
             message += '\n';
         }
-
-        logger.debug({ ...getCommandLogInfo(interaction), message }, 'getServers: Constructed message');
 
         await interaction.followUp({
             content: message,
